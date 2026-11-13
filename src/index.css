@@ -1,0 +1,215 @@
+@import "tailwindcss";
+
+/* Palette taken from the real space: amber lit wall, clay cushions, cocoa logo, leaf plants, cream walls. */
+@theme {
+  /* Dark brown page after the owner's reference (13/11): one ground, light text, gold accent */
+  --color-paper: #2b1d16;      /* page ground */
+  --color-cream: #36261d;      /* raised surface / alternate band */
+  --color-night: #1d130e;      /* deepest band (combo, footer) */
+  --color-ink: #f3e7d8;        /* main text */
+  --color-cocoa: #cdb6a0;      /* muted text */
+  --color-amber: #e6b97c;      /* highlight */
+  --color-amber-deep: #c99a5e;
+  --color-clay: #b97a4e;
+  --color-clay-deep: #d9a56b;  /* CTA / accent (gold) — dark text on it */
+  --color-leaf: #6f8455;
+  --color-leaf-deep: #3c4a2e;
+
+  --font-display: "Noto Serif Display", "Times New Roman", serif;
+  --font-body: "Be Vietnam Pro", system-ui, sans-serif;
+
+  --radius-frame: 1.25rem;
+}
+
+:root {
+  --header-h: 52px; /* px on purpose: scroll-to-section parses it with parseFloat; App re-measures it */
+  /* page background is scrubbed between layer tones by App (SCR-10) */
+  --page-bg: var(--color-paper); /* one ground for the whole page */
+
+  /* Signature theme mapping */
+  --sig-bg: var(--color-paper);
+  --sig-fg: var(--color-ink);
+  --sig-muted: color-mix(in oklab, var(--color-ink) 55%, transparent);
+  --sig-accent: var(--color-clay);
+  --sig-danger: #b3361d;
+  --sig-font-display: var(--font-display);
+  --sig-font-body: var(--font-body);
+}
+
+html, body { overflow-x: clip; }
+html { scroll-behavior: auto; }
+body {
+  background: var(--page-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1.0625rem; /* 17px body (taste: 16–20px) */
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* One pair of outer margins for the whole page (header, sections, Signatures). */
+:root { --page-x: clamp(1.25rem, 5vw, 4rem); }
+
+/* SIG-106 header (internals untouched): same margins, tone step instead of a hairline. */
+#top > header {
+  padding-inline: var(--page-x) !important;
+  border-bottom: 0 !important;
+  background: var(--color-paper) !important;
+}
+
+/* ── Landing layout system (owner feedback 13/11): one centred container, one section rhythm,
+   one h2 size, one page ground. Applied to my sections AND the Signatures. ─────────────── */
+:root {
+  --wrap: 75rem;                                  /* ~1200px content width */
+  --section-y: clamp(3.5rem, 6vw, 5.5rem);        /* 56–88px */
+  --h2: clamp(2.3rem, 3.8vw, 3.4rem);             /* tall narrow caps */
+}
+.wrap { width: 100%; max-width: calc(var(--wrap) + 2 * var(--page-x)); margin-inline: auto; padding-inline: var(--page-x); }
+.section-y { padding-block: var(--section-y); }
+.h2 { font-size: var(--h2); line-height: 1.02; color: var(--color-ink); }
+.lead { font-size: 1.125rem; line-height: 1.6; color: var(--color-ink); max-width: 44rem; }
+
+/* Signatures follow the same system */
+.sig405, .sig510, .sig705, .sig316 { padding-block: var(--section-y) !important; background: transparent !important; }
+.sig405-title, .sig510-title, .sig705-title, .sig316-heading, .sig802 h2 {
+  font-size: var(--h2) !important; line-height: 1.02 !important;
+}
+.sig405-top, .sig405-grid, .sig510-head, .sig705-wrap, .sig316-grid { max-width: var(--wrap) !important; margin-inline: auto !important; }
+.sig405, .sig705, .sig316 { padding-inline: var(--page-x) !important; }
+.sig405-top, .sig510-head { flex-direction: column; align-items: flex-start !important; justify-content: flex-start !important; gap: .9rem !important; margin-bottom: 2.25rem !important; }
+.sig510-head { padding-inline: 0 !important; width: calc(100% - 2 * var(--page-x)); }
+.sig405-intro, .sig510-intro, .sig705-intro { max-width: 44rem !important; font-size: 1.125rem !important; color: var(--color-ink) !important; margin-top: 0 !important; }
+
+/* Combo winding path: the curve passes each of steps 1–3 roughly horizontally, so their text sits ABOVE the
+   dot; step 4's dot is reached from below, so its text sits LEFT of the dot (right-aligned, centred on it). */
+@media (min-width: 1024px) {
+  #combo .cp-step[data-side='above'] { left: calc(var(--x) - 0.75rem); top: calc(var(--y) - 1.4rem); transform: translateY(-100%); }
+  #combo .cp-step[data-side='left'] { left: auto; right: calc(100% - var(--x) + 1.75rem); top: var(--y); transform: translateY(-50%); text-align: right; width: min(19rem, 24%); }
+}
+
+/* SIG-405: row height so the open tile (2×2) holds description + prices; flat dark scrim when open */
+/* rows have a minimum height but grow with the open tile's content (never clip the title) */
+.sig405-grid { grid-auto-rows: minmax(clamp(12rem, 17vw, 15.5rem), auto) !important; }
+.sig405-tile.is-open .sig405-meta { display: none; }
+
+/* Open tile: SAME structure as a closed tile (photo stays full-bleed, absolute) so Flip only animates size and
+   position — smooth. Once open, a light info panel fades in over the right part; the tile's own head hides.
+   The panel is in normal flow (not absolute) so the tile GROWS to fit the whole price list — no inner scrollbar. */
+.sig405 .sig405-tile.is-open .sig405-head { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.sig405-tile.is-open .sig405-details {
+  position: relative !important; flex: 1 1 auto; align-self: stretch; margin-left: 40%; width: 60%;
+  display: flex; flex-direction: column; justify-content: center;
+  background: var(--color-paper); color: var(--color-ink) !important;
+  padding: 1.25rem 1.5rem !important;
+}
+.sig405-tile.is-open { min-height: 31rem; order: -1; } /* open tile always takes the top-left 2x2 slot: no holes */
+@media (max-width: 767px) {
+  .sig405-tile.is-open { min-height: 36rem; }
+  .sig405-tile.is-open .sig405-details { margin-left: 0; margin-top: 9rem; width: 100%; justify-content: flex-start; }
+}
+.sig405-tile { will-change: auto; }
+
+/* SIG-510: lanes sized so the whole gallery fits about one screen */
+.sig510-lane:nth-child(1) .sig510-item, .sig510-lane:nth-child(3) .sig510-item { height: clamp(8.5rem, 20vh, 13rem) !important; }
+.sig510-lane:nth-child(2) .sig510-item { height: clamp(10rem, 24vh, 15.5rem) !important; }
+
+/* SIG-705: heading on top; guest photos (aside) left, thread right; nothing sticky (sticky is used twice already) */
+.sig705-wrap { grid-template-columns: 1fr !important; gap: 2rem !important; }
+.sig705-top { position: static !important; }
+.sig705-phone { background: var(--color-cream) !important; padding: 1.25rem !important; }
+.sig705-source { margin-bottom: .75rem !important; }
+.sig705-text { font-size: 1rem !important; }
+@media (min-width: 1024px) {
+  .sig705-wrap { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) !important; align-items: stretch !important; }
+  .sig705-aside { height: 100%; }
+  .sig705-top { grid-column: 1 / -1; }
+  /* even 2-column grid: same height per row, same alignment and corners for every card */
+  .sig705-thread { display: grid !important; grid-template-columns: 1fr 1fr; gap: 1rem !important; align-items: stretch; }
+  .sig705-row, .sig705-row.is-right { align-items: stretch !important; margin: 0; }
+  .sig705-bubble, .sig705-row.is-right .sig705-bubble { max-width: 100% !important; height: 100%; border-radius: 1rem !important; display: flex; flex-direction: column; justify-content: space-between; }
+  .sig705-row.is-right .sig705-typing { right: auto; }
+}
+
+/* SIG-802 in the booking column — professional card: dark step bar on top, services as a one-column menu
+   list with a radio circle, strong labels, CTA-coloured primary button. The column already has the h2. */
+.booking-form { --sig-accent: var(--color-clay-deep); --sig-bg: var(--color-paper); --sig-fg: var(--color-ink); --sig-muted: color-mix(in oklab, var(--color-ink) 72%, transparent); }
+.booking-form .sig802 { padding: 0 !important; background: transparent !important; }
+.booking-form .sig802-head { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0 !important; }
+.booking-form .sig802-card {
+  padding: 0 !important; overflow: clip; background: var(--color-paper) !important; border: 1px solid color-mix(in oklab, var(--color-cocoa) 22%, transparent) !important;
+  border-radius: 1rem !important; box-shadow: none;
+}
+.booking-form .sig802-vp, .booking-form .sig802-success { padding: 1.4rem 1.5rem 1.5rem; }
+.booking-form .sig802[data-ready='true'] .sig802-steps { margin: 0 !important; padding: .9rem 1.5rem; background: var(--color-night); color: var(--color-ink); }
+.booking-form .sig802-steptitle { color: color-mix(in oklab, var(--color-ink) 70%, transparent) !important; }
+.booking-form .sig802-stepitem[data-state='current'] .sig802-steptitle { color: var(--color-ink) !important; font-weight: 600; }
+.booking-form .sig802-dot { border-color: color-mix(in oklab, var(--color-ink) 45%, transparent) !important; color: var(--color-ink) !important; }
+.booking-form .sig802-stepitem[data-state='current'] .sig802-dot { border-color: var(--color-amber) !important; color: var(--color-amber) !important; }
+.booking-form .sig802-stepitem[data-state='done'] .sig802-dot { background: var(--color-amber) !important; border-color: var(--color-amber) !important; color: var(--color-night) !important; }
+.booking-form .sig802-line { background: color-mix(in oklab, var(--color-ink) 22%, transparent) !important; }
+.booking-form .sig802-fill { background: var(--color-amber) !important; }
+.booking-form .sig802-mprog { padding: .9rem 1.25rem; background: var(--color-night); color: var(--color-ink); margin: 0 !important; }
+.booking-form .sig802-stephead { font-size: 1.5rem !important; font-weight: 600 !important; }
+.booking-form .sig802-stepdesc { color: color-mix(in oklab, var(--color-ink) 75%, transparent) !important; font-size: .98rem !important; }
+.booking-form .sig802-label { font-weight: 600; color: var(--color-ink); }
+.booking-form .sig802-chips { display: grid !important; grid-template-columns: 1fr; gap: .5rem !important; }
+.booking-form .sig802-chip span {
+  display: flex !important; align-items: center; gap: .75rem; width: 100%; min-height: 3.1rem; justify-content: flex-start !important; text-align: left;
+  border-radius: .7rem !important; padding: .55rem 1rem !important; background: var(--color-cream) !important; color: var(--color-ink); font-size: 1rem !important;
+  border: 1px solid color-mix(in oklab, var(--color-cocoa) 20%, transparent) !important; transition: border-color .15s, background-color .15s;
+}
+.booking-form .sig802-chip span::before {
+  content: '' !important; flex: none; width: 1.15rem; height: 1.15rem; border-radius: 50%;
+  border: 2px solid color-mix(in oklab, var(--color-cocoa) 55%, transparent); background: transparent; box-sizing: border-box;
+}
+.booking-form .sig802-chip:hover span { border-color: var(--color-clay-deep) !important; }
+.booking-form .sig802-chip input:checked + span { background: color-mix(in oklab, var(--color-clay-deep) 18%, var(--color-cream)) !important; border-color: var(--color-clay-deep) !important; color: var(--color-ink) !important; font-weight: 600; }
+.booking-form .sig802-chip input:checked + span::before { border: 5px solid var(--color-clay-deep); }
+.booking-form .sig802-input { border-radius: .7rem !important; border-color: color-mix(in oklab, var(--color-cocoa) 30%, transparent) !important; background: var(--color-cream) !important; color: var(--color-ink) !important; color-scheme: dark; }
+.booking-form .sig802-btn-primary { background: var(--color-clay-deep) !important; color: var(--color-night) !important; }
+.booking-form .sig802-btn-primary:hover { background: var(--color-ink) !important; color: var(--color-night) !important; }
+
+/* SIG-316: compact — each layer is text beside its photo; the left column stays sticky */
+.sig316-block { min-height: 0 !important; padding-block: clamp(1.5rem, 3vw, 2.5rem); }
+@media (min-width: 768px) {
+  .sig316-body { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2rem; align-items: center; }
+  .sig316-pic { margin: 0 !important; grid-column: 2; grid-row: 1 / span 2; }
+  .sig316-grid { grid-template-columns: minmax(0, .55fr) minmax(0, 1.45fr) !important; gap: 3rem !important; }
+}
+.sig316-text { font-size: 1.125rem !important; }
+
+section[id] { scroll-margin-top: var(--header-h); }
+
+.font-display { font-family: var(--font-display); font-stretch: 80%; }
+/* Reference look: section titles in tall, narrow, high-contrast serif capitals */
+h1.font-display, .h2, .sig405-title, .sig510-title, .sig705-title, .sig316-heading {
+  font-family: var(--font-display) !important; font-stretch: 62.5% !important; text-transform: uppercase;
+  letter-spacing: .015em !important; font-weight: 500 !important;
+}
+h1, h2, h3, .sig316-heading, .sig405-title, .sig510-title, .sig705-title { text-wrap: balance; }
+
+/* Photo frame — plain soft rectangle. NO arch frames (owner rule, lessons.md). */
+.frame { border-radius: var(--radius-frame); overflow: clip; }
+
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: clip; }
+
+:focus-visible { outline: 2px solid var(--color-amber); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* Hero (SIG-208 project variant): brand + CTA centred; the two mood lines in Playfair Display italic,
+   moved to the top-right / bottom-left corners so they never sit under the centred title. */
+:root { --font-accent: "Playfair Display", Georgia, serif; }
+.sig208-info { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); text-align: center; max-width: min(56rem, 92%) !important; width: max-content; }
+.sig208-title { font-family: var(--font-accent) !important; font-style: italic; font-weight: 500 !important; font-size: clamp(1.35rem, 2.1vw, 1.9rem) !important; line-height: 1.25 !important; }
+.sig208-copy--after { top: 8% !important; }
+.sig208-copy--before { bottom: 7% !important; }
+@media (max-width: 767px) {
+  .sig208-copy--after { top: 6% !important; }
+  .sig208-copy--before { bottom: 5% !important; }
+  .sig208-title { font-size: 1.1rem !important; }
+}
+.sig208-info h1 { text-shadow: 0 2px 28px rgba(20, 12, 8, .55); }

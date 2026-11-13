@@ -1,0 +1,44 @@
+# agent & AI working files — never commit
+.claude/
+.claude
+CLAUDE.md
+AGENTS.md
+.agents/
+.agent/
+skills-lock.json
+.shots/
+/lessons.md
+/sale.md
+/rule.md
+public/layout/
+
+# build output & dependencies
+dist/
+dist-ssr/
+*.tsbuildinfo
+node_modules/
+
+# secrets & environment
+.env
+.env.*
+!.env.example
+*.local
+
+# logs & temp
+logs/
+*.log
+.cache/
+.tmp/
+*.tmp
+
+# editor & OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# design-skill working files
+.taste-skill/
