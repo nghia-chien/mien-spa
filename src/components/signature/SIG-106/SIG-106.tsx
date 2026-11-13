@@ -1,4 +1,4 @@
-// DUDI Signature SIG-106 v1.0.0 → biến thể dự án: sửa lỗi chữ tĩnh ẩn vẫn chiếm chỗ (logo header bị lệch)
+// DUDI Signature SIG-106 v1.0.0 → biến thể dự án: sửa lỗi chữ tĩnh ẩn vẫn chiếm chỗ (logo header bị lệch); intro chạy 1 lần, chữ bay trả về overlay (hết lỗi logo nhân đôi khi đổi breakpoint); prop `logo` = logo ảnh, màn chờ hiện logo lớn rồi Flip.fit vào header
 
 import { useRef } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
@@ -15,6 +15,8 @@ export interface SIG106Props {
   brand: string
   tagline?: string
   children?: ReactNode
+  /** Project variant: an image logo. The preloader shows it large, then it shrinks into the header (Flip.fit). */
+  logo?: { src: string; alt: string }
   labels?: {
     brand?: string
     loading?: string
@@ -28,6 +30,7 @@ export function SIG106({
   brand,
   tagline,
   children,
+  logo,
   labels,
 }: SIG106Props) {
   const root          = useRef<HTMLDivElement>(null)
@@ -35,6 +38,9 @@ export function SIG106({
   const centerRef     = useRef<HTMLDivElement>(null)
   const headerLogoRef = useRef<HTMLDivElement>(null)
   const accentRef     = useRef<HTMLDivElement>(null)
+  const played        = useRef(false)
+  const bigLogoRef    = useRef<HTMLImageElement>(null)
+  const smallLogoRef  = useRef<HTMLImageElement>(null)
 
   const factor = intensity === 1 ? 0.7 : intensity === 3 ? 1.4 : 1
   const chars  = brand.split('')
@@ -47,8 +53,8 @@ export function SIG106({
       mm.add('(prefers-reduced-motion: reduce)', () => {
         const overlay    = overlayRef.current
         const headerLogo = headerLogoRef.current
-        if (!overlay || !headerLogo) return
-        gsap.set(headerLogo.querySelectorAll<HTMLElement>('.sig106-static'), { autoAlpha: 1 })
+        if (!overlay) return
+        if (headerLogo) gsap.set(headerLogo.querySelectorAll<HTMLElement>('.sig106-static'), { autoAlpha: 1 })
         gsap.to(overlay, {
           autoAlpha: 0,
           duration: 0.15,
@@ -67,10 +73,47 @@ export function SIG106({
           const overlay    = overlayRef.current
           const center     = centerRef.current
           const headerLogo = headerLogoRef.current
-          if (!overlay || !center || !headerLogo) return
+          if (!overlay) return
 
+          // project fix: intro plays ONCE. A breakpoint change re-runs this branch; without the guard the
+          // flipped letters stayed in the header next to the re-shown static ones ("Miên SpaMiên Spa").
+          if (played.current) {
+            overlay.style.display = 'none'
+            return
+          }
+
+          /* image-logo variant: fade/scale in, hold, then Flip.fit the big logo onto the header logo. No DOM move. */
+          if (logo) {
+            const big = bigLogoRef.current
+            const small = smallLogoRef.current
+            if (!big || !small) return
+            gsap.set(small, { autoAlpha: 0 })
+            if (accentRef.current) gsap.set(accentRef.current, { scaleX: 0, transformOrigin: 'left center' })
+            const flyDur = 0.85 * factor
+            gsap
+              .timeline()
+              .to(accentRef.current, { scaleX: 1, duration: 0.6 * factor, ease: 'power2.out' }, 0)
+              .from(big, { autoAlpha: 0, scale: 0.92, duration: 0.8 * factor, ease: 'power3.out' }, 0.05)
+              .to({}, { duration: 0.6 * factor })
+              .add(() => {
+                Flip.fit(big, small, { duration: flyDur, ease: 'power2.inOut', scale: true })
+                gsap.to(overlay.querySelectorAll('.sig106-fade'), { autoAlpha: 0, duration: 0.3 * factor })
+                gsap.to(overlay, { backgroundColor: 'rgba(0,0,0,0)', duration: 0.5 * factor, delay: 0.2 * factor, ease: 'power2.in' })
+              })
+              .set(small, { autoAlpha: 1 }, `+=${flyDur}`)
+              .add(() => {
+                overlay.style.display = 'none'
+                played.current = true
+              })
+            return
+          }
+          if (!center || !headerLogo) return
           const letterSpans = gsap.utils.toArray<HTMLElement>('.sig106-letter', center)
           if (!letterSpans.length) return
+          const homes = letterSpans.map((el) => el.parentElement)
+          const statics = headerLogo.querySelectorAll<HTMLElement>('.sig106-static')
+          // put flipped letters back in the overlay; the header keeps only the static wordmark
+          const sendHome = () => letterSpans.forEach((el, i) => { if (el.parentElement !== homes[i]) homes[i]?.appendChild(el) })
 
           /* initial states */
           // project fix: hidden static letters must not keep their width, or the docked wordmark is offset
@@ -113,6 +156,9 @@ export function SIG106({
                 scale    : true,
                 onComplete() {
                   if (overlay) overlay.style.display = 'none'
+                  played.current = true
+                  statics.forEach((s) => { s.style.display = 'block' })
+                  sendHome()
                 },
               })
 
@@ -123,12 +169,14 @@ export function SIG106({
                 ease     : 'power2.in',
               })
             })
+          // interrupted mid-intro (breakpoint change) → undo the DOM move so the re-run starts clean
+          return () => sendHome()
         }
       )
 
       return () => mm.revert()
     },
-    { scope: root, dependencies: [brand, intensity] }
+    { scope: root, dependencies: [brand, intensity, logo?.src] }
   )
 
   /* ─── shared style fragment ─────────────────────────────────────────────── */
@@ -173,6 +221,7 @@ export function SIG106({
         <div
           ref={accentRef}
           aria-hidden="true"
+          className="sig106-fade"
           style={{
             position : 'absolute',
             bottom   : '12%',
@@ -183,9 +232,12 @@ export function SIG106({
           }}
         />
 
-        {/* Large wordmark */}
-        <div ref={centerRef} style={{ display: 'flex', alignItems: 'flex-end', gap: '0.04em' }}>
-          {chars.map((char, i) => (
+        {/* Large logo (image variant) or wordmark */}
+        {logo ? (
+          <img ref={bigLogoRef} src={logo.src} alt="" style={{ display: 'block', height: 'clamp(9rem, 38vh, 18rem)', width: 'auto' }} />
+        ) : null}
+        <div ref={centerRef} style={{ display: logo ? 'none' : 'flex', alignItems: 'flex-end', gap: '0.04em' }}>
+          {!logo && chars.map((char, i) => (
             <span
               key={i}
               style={{
@@ -204,8 +256,9 @@ export function SIG106({
           ))}
         </div>
 
-        {tagline && (
+        {tagline && !logo && (
           <p
+            className="sig106-fade"
             style={{
               marginTop    : '1.5rem',
               fontFamily   : 'var(--sig-font-body, system-ui, sans-serif)',
@@ -233,6 +286,9 @@ export function SIG106({
           background  : 'var(--sig-bg, #0e0e0e)',
         }}
       >
+        {logo ? (
+          <img ref={smallLogoRef} src={logo.src} alt={logo.alt} style={{ display: 'block', height: 'var(--sig106-logo-h, 3rem)', width: 'auto' }} />
+        ) : (
         <div
           ref={headerLogoRef}
           role="img"
@@ -258,6 +314,7 @@ export function SIG106({
             </span>
           ))}
         </div>
+        )}
       </header>
 
       {/* ── Page content ──────────────────────────────────────────────────── */}

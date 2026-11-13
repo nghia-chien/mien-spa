@@ -55,6 +55,8 @@ body {
   padding-inline: var(--page-x) !important;
   border-bottom: 0 !important;
   background: var(--color-paper) !important;
+  padding-block: .3rem !important;
+  --sig106-logo-h: clamp(3.4rem, 5.2vw, 4.4rem); /* image logo (cream recolour of the client logo) */
 }
 
 /* ── Landing layout system (owner feedback 13/11): one centred container, one section rhythm,

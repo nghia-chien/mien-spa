@@ -40,7 +40,7 @@ export default function App() {
   }, [])
 
   return (
-    <SIG106 id="top" brand={brand.name} tagline={brand.tagline} intensity={1} labels={{ brand: brand.fullName }}>
+    <SIG106 id="top" brand={brand.name} tagline={brand.tagline} intensity={1} logo={{ src: brand.logoLight, alt: brand.fullName }} labels={{ brand: brand.fullName }}>
       {/* SIG-106 pads its children (4rem 2rem); cancel it so sections run full-bleed */}
       <div style={{ margin: '-4rem -2rem' }}>
         <SiteNav />

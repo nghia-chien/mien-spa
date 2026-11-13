@@ -7,6 +7,8 @@ export const brand = {
   fullName: 'Miên Spa Tuy Hòa',
   tagline: 'Nơi tạo nguồn cảm xúc', // printed in the client's logo
   logo: '/img/logo-mask.png',
+  /** Client logo (public/Miên Spa Tuy Hòa/logo/logo.png), cropped + recoloured cream for the dark header. */
+  logoLight: '/img/logo-light.png',
 }
 
 export const contact = {
